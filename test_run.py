@@ -1,35 +1,31 @@
 import pandas as pd
+import sys
+import os
+
+# Pfad-Korrektur, damit batt_sense_core im Hauptverzeichnis gefunden wird
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from batt_sense_core import BattSenseV205_3
 
-# Initialisierung des Auditors (v205.5 Standard)
-auditor = BattSenseV205_3()
+def main():
+    auditor = BattSenseV205_3()
+    print("--- BATT-SENSE v205.5 Integration Test ---")
 
-def run_test():
-    print("--- BATT-SENSE v205.5 Testlauf ---")
-    
-    # Test-Daten laden (Beispiel ID01)
+    # 1. Test: Leere Daten (Der Bug-Check für den Production Guard)
+    print("\nTest 1: Leerer DataFrame...")
+    empty_df = pd.DataFrame()
+    report_empty = auditor.execute(empty_df, battery_id="EMPTY_TEST")
+    print(f"Ergebnis: {report_empty['verdict']} (Erwartet: INVALID)")
+
+    # 2. Test: Reale Daten (ID01)
+    print("\nTest 2: Reale Messdaten (ID01)...")
     try:
-        df = pd.read_csv("data_samples/ID01.csv")
-    except FileNotFoundError:
-        # Fallback für lokale Tests ohne Ordnerstruktur
-        print("Hinweis: data_samples/ID01.csv nicht gefunden. Nutze Dummy-Daten.")
-        df = pd.DataFrame({
-            'freq': [1000, 100, 10, 1, 0.1],
-            'real': [0.01, 0.02, 0.03, 0.04, 0.05],
-            'imag': [-0.001, -0.005, -0.01, -0.02, -0.05]
-        })
-
-    # Audit ausführen (Signatur-Fix: Keine temp_c / soc_pct mehr)
-    report = auditor.execute(df, battery_id="TEST-CELL-01", label=0)
-
-    # Ergebnis-Ausgabe
-    print(f"Audit-Urteil: {report['verdict']}")
-    if "metrics" in report:
-        print(f"ECI: {report['metrics']['eci']}")
-        print(f"Phys. Konsistenz: {report['metrics']['phys_consistency']}")
-    
-    if "error" in report:
-        print(f"Fehlermeldung: {report['error']}")
+        # Pfad geht eine Ebene hoch zu data_samples
+        data_path = os.path.join(os.path.dirname(__file__), '..', 'data_samples', 'ID01.csv')
+        df = pd.read_csv(data_path)
+        report_real = auditor.execute(df, battery_id="ID01_TEST")
+        print(f"Ergebnis: {report_real['verdict']} | ECI: {report_real['metrics']['eci']}")
+    except Exception as e:
+        print(f"Hinweis: Konnte ID01.csv nicht laden ({e}). Prüfe die Ordnerstruktur.")
 
 if __name__ == "__main__":
-    run_test()
+    main()
