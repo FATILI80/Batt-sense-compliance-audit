@@ -1,26 +1,28 @@
 import pandas as pd
-from batt_sense_core import BattSenseV205_3
+from batt_sense_core import BattSenseV205_3, EmptyDataFrameError, DataFormatError
 
 def main():
-    # Initialisierung des Auditors v205.5
     auditor = BattSenseV205_3()
-    print("--- BATT-SENSE v205.5 Integration Test (Root-Check) ---")
+    print("--- BATT-SENSE v205.5 Integration Test (Production Guard) ---")
 
-    # Test 1: Leere Daten (Der Bug-Check für den Production Guard)
+    # Test 1: Leere Daten (Prüft das Exception-Handling)
     print("\nTest 1: Leerer DataFrame...")
     empty_df = pd.DataFrame()
-    report_empty = auditor.execute(empty_df, battery_id="EMPTY_TEST")
-    print(f"Ergebnis: {report_empty['verdict']} (Erwartet: INVALID)")
+    try:
+        auditor.execute(empty_df, battery_id="EMPTY_TEST")
+    except EmptyDataFrameError as e:
+        print(f"Ergebnis: Exception korrekt ausgelöst und abgefangen! -> {e}")
 
-    # Test 2: Reale Messdaten (Prüfung der CSV-Anbindung)
+    # Test 2: Reale Messdaten (Prüft die Validierung)
     print("\nTest 2: Reale Messdaten (ID01)...")
     try:
-        # Da die CSV direkt im Hauptverzeichnis liegt:
         df = pd.read_csv("ID01.csv") 
         report_real = auditor.execute(df, battery_id="ID01_TEST")
         print(f"Ergebnis: {report_real['verdict']} | ECI: {report_real['metrics']['eci']}")
+    except FileNotFoundError:
+        print("Hinweis: ID01.csv nicht gefunden. Prüfe, ob die Datei im Verzeichnis liegt.")
     except Exception as e:
-        print(f"Hinweis: Konnte ID01.csv nicht laden ({e}).")
+        print(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
 
 if __name__ == "__main__":
     main()
