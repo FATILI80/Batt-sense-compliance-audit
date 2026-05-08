@@ -1,27 +1,35 @@
 import pandas as pd
-import sys
-import os
+from batt_sense_core import BattSenseV205_3
 
-# Pfad anpassen, damit der Core gefunden wird
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from batt_sense_core import BattSenseV205_1
+# Initialisierung des Auditors (v205.5 Standard)
+auditor = BattSenseV205_3()
 
-def run_system_check():
-    # Beispiel-Daten (NMC-Charakteristik)
-    data = {
-        "freq": [1000, 100, 10, 1, 0.1],
-        "real": [0.0142, 0.0145, 0.0150, 0.0160, 0.0180],
-        "imag": [-0.0001, -0.0010, -0.0050, -0.0100, 0.0]
-    }
-    df = pd.DataFrame(data)
+def run_test():
+    print("--- BATT-SENSE v205.5 Testlauf ---")
     
-    bs = BattSenseV205_1()
-    print("--- BATT-SENSE SYSTEM CHECK ---")
+    # Test-Daten laden (Beispiel ID01)
     try:
-        report = bs.execute(df, temp_c=25.0, soc_pct=100, battery_id="INTERNAL-TEST-001")
-        print(report)
-    except Exception as e:
-        print(f"Fehler beim Systemcheck: {e}")
+        df = pd.read_csv("data_samples/ID01.csv")
+    except FileNotFoundError:
+        # Fallback für lokale Tests ohne Ordnerstruktur
+        print("Hinweis: data_samples/ID01.csv nicht gefunden. Nutze Dummy-Daten.")
+        df = pd.DataFrame({
+            'freq': [1000, 100, 10, 1, 0.1],
+            'real': [0.01, 0.02, 0.03, 0.04, 0.05],
+            'imag': [-0.001, -0.005, -0.01, -0.02, -0.05]
+        })
+
+    # Audit ausführen (Signatur-Fix: Keine temp_c / soc_pct mehr)
+    report = auditor.execute(df, battery_id="TEST-CELL-01", label=0)
+
+    # Ergebnis-Ausgabe
+    print(f"Audit-Urteil: {report['verdict']}")
+    if "metrics" in report:
+        print(f"ECI: {report['metrics']['eci']}")
+        print(f"Phys. Konsistenz: {report['metrics']['phys_consistency']}")
+    
+    if "error" in report:
+        print(f"Fehlermeldung: {report['error']}")
 
 if __name__ == "__main__":
-    run_system_check()
+    run_test()
