@@ -30,7 +30,7 @@ class NASAPCoEAdapter:
 if __name__ == "__main__":
     from batt_sense_core import BattSenseV205_3
     
-    auditor = BattSenseV205_3()
+    auditor = BattSenseV205_5()
     adapter = NASAPCoEAdapter(auditor)
     
     # Dummy-Daten zur Demonstration der NASA-Logik
