@@ -28,7 +28,7 @@ class NASAPCoEAdapter:
 
 # Beispiel für die Nutzung (Simulation)
 if __name__ == "__main__":
-    from batt_sense_core import BattSenseV205_3
+    from batt_sense_core import BattSenseV205_5
     
     auditor = BattSenseV205_5()
     adapter = NASAPCoEAdapter(auditor)
