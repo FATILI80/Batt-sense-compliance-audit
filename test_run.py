@@ -1,8 +1,9 @@
 import pandas as pd
-from batt_sense_core import BattSenseV205_3, EmptyDataFrameError, DataFormatError
+from batt_sense_core import BattSenseV205_5, EmptyDataFrameError, DataFormatError
 
 def main():
-    auditor = BattSenseV205_5()
+    # HIER ist die neue Version mit dem eingefügten phys_limit
+    auditor = BattSenseV205_5(phys_limit=0.50)
     print("--- BATT-SENSE v205.5 Integration Test (Production Guard) ---")
 
     # Test 1: Leere Daten (Prüft das Exception-Handling)
