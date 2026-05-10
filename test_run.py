@@ -2,7 +2,7 @@ import pandas as pd
 from batt_sense_core import BattSenseV205_3, EmptyDataFrameError, DataFormatError
 
 def main():
-    auditor = BattSenseV205_3()
+    auditor = BattSenseV205_5()
     print("--- BATT-SENSE v205.5 Integration Test (Production Guard) ---")
 
     # Test 1: Leere Daten (Prüft das Exception-Handling)
