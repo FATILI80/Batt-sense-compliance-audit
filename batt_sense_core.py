@@ -19,7 +19,7 @@ class DataFormatError(BattSenseError):
     """Wird geworfen, wenn essentielle Spalten ('freq', 'real', 'imag') fehlen."""
     pass
 
-class BattSenseV205_3:
+class BattSenseV205_5:
     def __init__(self, mu_limit=0.85, phys_limit=0.50):
         # Schwellenwerte können jetzt bei Initialisierung überschrieben werden
         self.mu_limit = mu_limit
