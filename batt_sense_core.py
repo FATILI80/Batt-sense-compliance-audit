@@ -16,7 +16,7 @@ class EmptyDataFrameError(BattSenseError):
     pass
 
 class DataFormatError(BattSenseError):
-    """Wird geworfen, wenn essentielle Spalten ('freq', 'real', 'imag') fehlen."""
+    """Wird geworfen, wenn essentielle Spalten ('freq', 'real', 'imag') oder gültige Werte fehlen."""
     pass
 
 class BattSenseV205_5:
@@ -34,6 +34,10 @@ class BattSenseV205_5:
         required_columns = {'freq', 'real', 'imag'}
         if not required_columns.issubset(raw_df.columns):
             raise DataFormatError(f"[{battery_id}] Fehlende Spalten. Erwartet: {required_columns}")
+
+        # NEU: Frequenz-Schutz vor np.log10 Abstürzen (NaN-Vermeidung)
+        if (raw_df['freq'] <= 0).any():
+            raise DataFormatError(f"[{battery_id}] Frequenzwerte muessen > 0 sein für log10-Berechnung.")
 
         try:
             # 2. Datenbereinigung
