@@ -28,9 +28,11 @@ class NASAPCoEAdapter:
 
 # Beispiel für die Nutzung (Simulation)
 if __name__ == "__main__":
+    # HIER: Update auf Version 5
     from batt_sense_core import BattSenseV205_5
     
-    auditor = BattSenseV205_5()
+    # HIER: Korrekter Aufruf mit phys_limit
+    auditor = BattSenseV205_5(phys_limit=0.50)
     adapter = NASAPCoEAdapter(auditor)
     
     # Dummy-Daten zur Demonstration der NASA-Logik
