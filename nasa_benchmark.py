@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from batt_sense_core import BattSenseV205_3
+from batt_sense_core import BattSenseV205_5
 
 def generate_mock_nasa_data(is_degraded=False, seed=None):
     """Generiert deterministische Dummy-EIS-Daten für Benchmarks."""
@@ -14,9 +14,9 @@ def generate_mock_nasa_data(is_degraded=False, seed=None):
         real = np.linspace(0.01, 0.05, 40) + np.random.normal(0, 0.02, 40)
         imag = np.linspace(-0.01, -0.05, 40) + np.random.normal(0, 0.02, 40)
     else:
-        # Saubere, gleichläufige Kurve (Label 0 -> USABLE)
-        real = np.linspace(0.01, 0.05, 40)
-        imag = np.linspace(-0.01, -0.05, 40)
+        # Saubere, physikalische Kurven (gleiche Richtung)
+        real = 0.05 + 0.01 / np.sqrt(freq)
+        imag = -0.02 + 0.005 / np.sqrt(freq) 
     
     # Sicherstellen, dass die Spaltennamen exakt dem API-Vertrag entsprechen
     return pd.DataFrame({'freq': freq, 'real': real, 'imag': imag})
@@ -25,7 +25,8 @@ def run_benchmark(n_samples_per_class=10):
     print("--- BATT-SENSE NASA PCoE Benchmark (Scientific Edition) ---")
     print(f"Generiere und validiere {n_samples_per_class * 2} synthetische Profile...\n")
     
-    auditor = BattSenseV205_3(phys_limit=0.50)
+    # HIER ist die korrekte Version 5
+    auditor = BattSenseV205_5(phys_limit=0.50)
     
     # Confusion Matrix Zähler
     true_positives = 0  # Defekt -> korrekt als REJECT erkannt
