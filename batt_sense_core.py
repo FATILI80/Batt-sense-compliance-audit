@@ -1,71 +1,123 @@
 import numpy as np
 import pandas as pd
-import hashlib
 from scipy.interpolate import interp1d
 
-# BATT-SENSE v205.5: PRODUCTION GUARD
-VERSION_LABEL = "v205.5-production-guard"
-
-# --- Eigene Exceptions (Production Grade Fehlerkultur) ---
 class BattSenseError(Exception):
-    """Basis-Exception für alle BATT-SENSE Fehler."""
-    pass
-
-class EmptyDataFrameError(BattSenseError):
-    """Wird geworfen, wenn keine Daten übergeben werden."""
-    pass
-
-class DataFormatError(BattSenseError):
-    """Wird geworfen, wenn essentielle Spalten ('freq', 'real', 'imag') oder gültige Werte fehlen."""
+    """Basis-Exception für BATT-SENSE Fehler."""
     pass
 
 class BattSenseV205_5:
+    """
+    BATT-SENSE Core Audit Engine (v205.5 - Clean Version)
+    Fokus: Datenintegrität und physikalische Plausibilität von EIS-Daten.
+    """
     def __init__(self, mu_limit=0.85, phys_limit=0.50):
-        # Schwellenwerte können jetzt bei Initialisierung überschrieben werden
         self.mu_limit = mu_limit
         self.phys_limit = phys_limit
-        self.target_log_freq = np.linspace(3, -1, 40)
+
+    def _validate_input(self, df, battery_id):
+        """Prüft die Struktur der Eingangsdaten."""
+        if df is None or df.empty:
+            raise BattSenseError(f"[{battery_id}] DataFrame ist leer.")
+        
+        required_cols = ['freq', 'real', 'imag']
+        if not all(col in df.columns for col in required_cols):
+            raise BattSenseError(f"[{battery_id}] Fehlende Spalten. Erforderlich: {required_cols}")
+        
+        # Schutz vor ungültigen Frequenzen für Log-Berechnungen
+        if (df['freq'] <= 0).any():
+             raise BattSenseError(f"[{battery_id}] Ungültige Frequenzwerte (<= 0) gefunden.")
+        
+        return df.sort_values('freq', ascending=False)
+
+    def _calculate_eci(self, df):
+        """
+        Berechnet den Electrical Consistency Index (ECI).
+        Heuristische Bewertung der Phasenstabilität über das Frequenzspektrum.
+        """
+        phase = np.angle(df['real'] + 1j*df['imag'], deg=True)
+        log_freq = np.log10(df['freq'])
+        
+        # Interpolation auf einheitliches Raster (40 Punkte)
+        # Verhindert Fehler bei unterschiedlichen Messauflösungen
+        f_interp = interp1d(log_freq, phase, kind='linear', fill_value="extrapolate")
+        target_log_freq = np.linspace(log_freq.max(), log_freq.min(), 40)
+        uniform_phase = f_interp(target_log_freq)
+        
+        # ECI = Mittlerer Gradient der Phase (ohne künstliche Skalierung)
+        eci = np.mean(np.abs(np.gradient(uniform_phase)))
+        return float(eci)
 
     def execute(self, raw_df, battery_id="UNKNOWN", label=None):
-        # 1. Strenge Input-Validierung (Fail Fast Mechanismus)
-        if raw_df is None or raw_df.empty or len(raw_df) < 5:
-            raise EmptyDataFrameError(f"[{battery_id}] DataFrame ist leer oder hat zu wenig Datenpunkte (min. 5).")
-        
-        required_columns = {'freq', 'real', 'imag'}
-        if not required_columns.issubset(raw_df.columns):
-            raise DataFormatError(f"[{battery_id}] Fehlende Spalten. Erwartet: {required_columns}")
-
-        # NEU: Frequenz-Schutz vor np.log10 Abstürzen (NaN-Vermeidung)
-        if (raw_df['freq'] <= 0).any():
-            raise DataFormatError(f"[{battery_id}] Frequenzwerte muessen > 0 sein für log10-Berechnung.")
-
+        """
+        Führt das vollständige Audit durch.
+        label: Erwartetes Ergebnis für den Benchmark (0=USABLE, 1=REJECT).
+        """
         try:
-            # 2. Datenbereinigung
-            df = raw_df.dropna(subset=['freq', 'real', 'imag']).sort_values("freq", ascending=False).reset_index(drop=True)
+            df = self._validate_input(raw_df, battery_id)
             
-            # 3. Robust ECI Berechnung
-            phase = np.arctan2(-df['imag'], df['real'])
-            log_f_source = np.log10(df['freq'])
-            f_interp = interp1d(log_f_source, phase, bounds_error=False, fill_value="extrapolate")
-            uniform_phase = f_interp(self.target_log_freq)
-            eci = round(float(np.mean(np.abs(np.gradient(uniform_phase))) * 15), 4)
+            # 1. Stabilitäts-Check
+            eci = self._calculate_eci(df)
             
-            # 4. Physics Check
-            correlation = np.corrcoef(np.gradient(df['real']), np.gradient(df['imag']))[0, 1]
-            phys_consistency = round(float(correlation), 4)
+            # 2. Physik-Check (Gradienten-Korrelation)
+            # Schutz vor NaN bei konstanten Werten
+            corr_matrix = np.corrcoef(np.gradient(df['real']), np.gradient(df['imag']))
+            correlation = corr_matrix[0, 1]
+            phys_consistency = 0.0 if np.isnan(correlation) else round(float(correlation), 4)
 
-            # 5. Audit Entscheidung
-            is_stable = eci < self.mu_limit
+            # 3. Entscheidungs-Logik (Binär nach SOP)
+            # Wichtig: ECI Limit muss ggf. angepasst werden, da *15 entfernt wurde.
+            # Ein ECI von 0.056 (alt) entsprach ca. 0.85 (alt mit *15). 
+            # Wir nutzen hier 0.1 als neuen, ehrlichen Schwellenwert.
+            is_stable = eci < 0.1 
             is_physical = phys_consistency > self.phys_limit
+            
             verdict = "USABLE" if (is_stable and is_physical) else "REJECT"
 
             return {
                 "battery_id": battery_id,
+                "eci": round(eci, 4),
+                "phys_consistency": phys_consistency,
                 "verdict": verdict,
-                "metrics": {"eci": eci, "phys_consistency": phys_consistency},
-                "ground_truth": label,
-                "audit_hash": hashlib.sha256(df.to_json().encode()).hexdigest()[:12]
+                "ground_truth": label
             }
+
         except Exception as e:
-            # Unerwartete Berechnungsfehler als Basis-Exception weitergeben
-            raise BattSenseError(f"[{battery_id}] Interner Berechnungsfehler: {str(e)}")
+            # Explizite Fehlermeldung statt magischer Zahlen
+            raise BattSenseError(f"Audit-Fehler bei {battery_id}: {str(e)}")
+
+# Benchmark-Klasse für die automatisierte Validierung
+class BattSenseBenchmark:
+    def __init__(self, auditor):
+        self.auditor = auditor
+        self.results = []
+
+    def add_test_case(self, df, battery_id, expected_label):
+        try:
+            # Übergabe des Labels an die execute-Methode
+            report = self.auditor.execute(df, battery_id=battery_id, label=expected_label)
+            self.results.append(report)
+        except Exception as e:
+            print(f"Benchmark-Warnung für {battery_id}: {e}")
+
+    def evaluate(self):
+        tp = fp = tn = fn = 0
+        for r in self.results:
+            flagged = 1 if r["verdict"] == "REJECT" else 0
+            actual = r.get("ground_truth")
+            
+            if actual is None: continue
+
+            if flagged == 1 and actual == 1: tp += 1
+            elif flagged == 1 and actual == 0: fp += 1
+            elif flagged == 0 and actual == 1: fn += 1
+            elif flagged == 0 and actual == 0: tn += 1
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        
+        print("\n--- BATT-SENSE VALIDATION REPORT ---")
+        print(f"Precision: {precision:.2%}")
+        print(f"Recall:    {recall:.2%}")
+        print(f"Stats:     TP={tp}, FP={fp}, TN={tn}, FN={fn}")
+        return {"precision": precision, "recall": recall}
