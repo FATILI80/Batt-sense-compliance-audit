@@ -1,18 +1,22 @@
-# Scientific Limitations & Disclaimers
+# BATT-SENSE v205.5 - Scientific Compliance & Audit SOP
 
-BATT-SENSE v205.5 ist als numerischer Audit-Layer konzipiert. Um Overclaiming zu vermeiden und wissenschaftliche Integrität zu wahren, werden hier die expliziten Grenzen des Frameworks dokumentiert.
+## 1. Analyse-Methodik
+Das Framework führt ein automatisiertes, zweistufiges Audit durch, um die Integrität von elektrochemischen Impedanzspektren (EIS) vor der KI-Verarbeitung sicherzustellen.
 
-## 1. Kein Ersatz für den Kramers-Kronig (KK) Test
-Der Empirical Consistency Index (ECI) und die Gradienten-Korrelation messen numerische Glätte, Phasen-Jitter und Sampling-Stabilität. **Sie validieren keine Elektrochemie.** BATT-SENSE ist kein zertifizierter Lin-KK Test. Physikalisch inkonsistente Daten, die zufällig glatt verlaufen, können als False Negatives durch das Raster fallen.
+### A. Stabilitäts-Audit (Electrical Consistency Index - ECI)
+Der ECI bewertet die Phasenstabilität über das gesamte Frequenzspektrum.
+- **Verfahren:** Interpolation der Phase auf 40 äquidistante logarithmische Frequenzstützstellen.
+- **Metrik:** Mittlerer absoluter Gradient der Phase ($|\nabla \phi|$).
+- **Grenzwert:** $ECI < 0.10$ für stabile Messreihen.
 
-## 2. Keine State of Health (SOH) Diagnose
-Dieses Framework trifft **keine** Aussagen über den Gesundheitszustand, die Degradation oder die Lebensdauer der Batterie. Es prüft ausschließlich die Integrität des Datensatzes vor der Weitergabe an eine KI-Pipeline.
+### B. Physikalisches Audit
+- **Gradienten-Kohärenz:** Prüfung der Korrelation zwischen den Gradienten von Real- und Imaginärteil. Ein Wert $> 0.50$ indiziert eine synchrone Antwort des Systems.
+- **Magnituden-Monotonie:** Validierung der elektrochemischen Plausibilität. Der Impedanzbetrag ($|Z|$) muss bei sinkender Frequenz einen monoton steigenden Trend aufweisen.
 
-## 3. Heuristische Schwellenwerte
-Der Threshold für die Gradienten-Korrelation (`> 0.5`) ist ein empirischer Richtwert, der für NMC-Zellen bei Raumtemperatur kalibriert wurde. Er stellt keine universelle physikalische Konstante dar. Für andere Zellchemien, extreme Temperaturen oder spezifische Niederfrequenz-Strukturen (z.B. ausgeprägte Warburg-Tails) muss dieser Wert vom Nutzer neu validiert werden.
+## 2. Status-Definitionen
+- **USABLE:** Die Daten sind für ML-Modelle und automatisierte Diagnosen geeignet.
+- **REJECT:** Die Daten enthalten physikalische Artefakte, Rauschen oder Drift und müssen manuell geprüft oder verworfen werden.
 
-## 4. Hardware-Abhängigkeit
-Das Framework wurde primär gegen synthetische und referenzierte Daten (NASA PCoE) gebenchmarkt. Die Robustheit gegenüber spezifischem Hardware-Rauschen (z.B. von Arbin, BioLogic, Gamry oder Neware Messgeräten) sowie elektromagnetischen Interferenzen (EMI) im Feld ist derzeit explorativ und bedarf weiterer Validierung durch reale Hardware-Injections.
-
----
-*Status: Dieses Projekt ist ein Proof of Concept. Es besitzt keine regulatorische Zertifizierung für industrielle oder sicherheitskritische Batterie-Diagnostik.*
+## 3. Disclaimer & Grenzen
+- **Kein Ersatz für Kramers-Kronig:** Dieses Tool ist ein heuristischer Audit-Layer für industrielle Echtzeit-Anwendungen, keine vollständige mathematische Validierung der Kausalität.
+- **Keine Zustandsdiagnose:** BATT-SENSE bewertet die **Datenqualität**, nicht den Gesundheitszustand (SoH) der Batterie.
