@@ -1,4 +1,15 @@
 # BATT-SENSE Compliance Audit 🛡️
+## Repository Struktur
+
+Dieses Projekt bietet zwei Ansätze zur Batterie-Diagnose:
+
+* **v1 (Standard):** `batt_sense_core.py` & `run_audit.py`
+    * Leichtgewichtiges Skript für schnelle Einzel-Audits. Ideal für explorative Datenanalyse.
+* **v2 (Enterprise):** `batt_sense_v2_core.py` & `run_v2_batch_audit.py`
+    * Modulare Architektur mit strikter Trennung von Logik und Validierung.
+    * Integrierter Trace-Logger und automatisierte Batch-Verarbeitung für industrielle Testreihen.
+    * Exportiert detaillierte Audit-Reports als CSV.
+
 **Version: v205.5-production-guard**
 
 Dieses Repository fungiert als strenger **"digitaler Türsteher"** für Batterie-Impedanzdaten. Es filtert unphysikalischen Datenmüll heraus und stellt die Qualität von Messungen sicher, bevor diese in komplexe ML-Pipelines oder Analysen fließen.
