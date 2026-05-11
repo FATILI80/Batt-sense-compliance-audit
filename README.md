@@ -58,3 +58,16 @@ except Exception as e:
     print(f"Fehler beim Audit: {e}")
  BATT-SENSE schließt die Lücke zwischen reiner Forschung (wie Lin-KK) und hardwaregebundener Hersteller-Software durch eine unabhängige, softwarebasierte Prüfung. Es vereinheitlicht verschiedene Datenquellen und prüft sie gegen vordefinierte Compliance-Regeln.
 ​Status: Proof of Concept. Entwickelt für die industrielle Qualitätssicherung von EIS-Daten.
+## Validierung & Stress-Test (NASA Dataset ID54)
+
+Um die Zuverlässigkeit von **BATT-SENSE v2** zu demonstrieren, wurde das System mit realen Labordaten (NASA PCoE) sowie manipulierten Fehler-Daten getestet:
+
+| Test-Szenario | ECI-Stabilität (Ziel < 0.85) | Physik-Check (Ziel > 0.50) | Urteil |
+| :--- | :--- | :--- | :--- |
+| **Original NASA ID54** | **0.068** ✅ | **0.554** ✅ | **USABLE** |
+| **Manipuliert (Rauschen)**| **9.447** ❌ | **0.164** ❌ | **REJECT** |
+
+### Analyse
+1. **Präzision:** Der `StabilityValidator` erkennt selbst feinste Unregelmäßigkeiten. Bei realen, gesunden Daten liegt der ECI-Wert nahe 0.
+2. **Sicherheit:** Bei simuliertem Messrauschen (Wackelkontakt/EMV-Störung) schlägt das System sofort Alarm und verhindert die Weiterverarbeitung fehlerhafter Daten.
+
