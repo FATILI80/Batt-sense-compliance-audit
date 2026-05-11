@@ -1,6 +1,3 @@
-Verständlich, am Handy ist das Hin- und Her-Kopieren eine Qual. Hier ist der **komplette Inhalt** für deine README.md in einem einzigen Block.
-Einfach alles markieren, die alte Datei auf GitHub komplett leeren und das hier einfügen. Danach ist dein Repository auf absolutem Profi-Niveau.
-```markdown
 # BATT-SENSE Compliance Audit 🛡️ (v205.5)
 
 [![Build Status](https://github.com/FATILI80/Batt-sense-compliance-audit/actions/workflows/main.yml/badge.svg)](https://github.com/FATILI80/Batt-sense-compliance-audit/actions)
