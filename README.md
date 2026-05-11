@@ -6,6 +6,16 @@
 Dieses Repository bietet ein hochspezialisiertes Framework zur automatisierten Qualitätssicherung von Batterie-Impedanzdaten (EIS). Es fungiert als strenger **"digitaler Türsteher"**, der unphysikalischen Datenmüll filtert, bevor dieser in ML-Pipelines oder Diagnosesysteme fließt.
 
 ## 🚀 Key Features (v205.5 Professional)
+graph TD
+    A[Raw EIS Data] --> B{Input Validation}
+    B -- Fail --> C[REJECT: Data Format Error]
+    B -- Pass --> D[ECI Audit - Stability]
+    D --> E[Physical Consistency Check]
+    E --> F[Monotonicity Validation]
+    F --> G{Decision Engine}
+    G -- "All Pass" --> H[VERDICT: USABLE]
+    G -- "One Fail" --> I[VERDICT: REJECT]
+
 - ✅ **ECI-Audit:** Berechnung des Electrical Consistency Index zur Erkennung von Signal-Drift ohne "magische Konstanten".
 - ✅ **Physik-Check 2.0:** Validierung der Gradienten-Kohärenz und zusätzliche **Monotonie-Prüfung** der Impedanz-Magnitude.
 - ✅ **Robustes Engineering:** Integrierter NaN-Schutz und explizites Error-Handling für industrielle Datensätze.
