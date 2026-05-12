@@ -6,6 +6,12 @@
 Dieses Repository bietet ein hochspezialisiertes Framework zur automatisierten Qualitätssicherung von Batterie-Impedanzdaten (EIS). Es fungiert als strenger **"digitaler Türsteher"**, der unphysikalischen Datenmüll filtert, bevor dieser in ML-Pipelines oder Diagnosesysteme fließt.
 
 ## 🚀 Key Features (v205.5 Professional)
+## ⚖️ Regulatory Compliance Layer
+BATT-SENSE beinhaltet ein dediziertes Modul zur Validierung der **EU-Batterieverordnung 2023/1542**. 
+- **Automatisierte CO2-Bilanzierung:** Prüfung der Emissions-Grenzwerte über den Lebenszyklus.
+- **Recycling-Audit:** Validierung der Mindestquoten für Lithium, Kobalt und Nickel (Targets 2031).
+- **Digitaler Batteriepass:** Vorbereitung der Datenstruktur gemäß DIN DKE SPEC 99100.
+
 
 ```mermaid
 graph TD
